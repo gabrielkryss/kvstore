@@ -1,4 +1,6 @@
 use std::fmt::Debug;
+use std::fs;
+
 use serde::{Serialize, Deserialize};
 use serde_json::Result;
 use sha2::Sha256;
@@ -98,8 +100,13 @@ impl Operations for KVStore {
     where
         Self: Sized 
     {
+        fs::create_dir_all(path)?; // maybe use create_dir instead?
+        let mut s: usize = 0;
+        // check if path contains key value mappings (do we count the files? directories?)
+        // if there is, count key value mappings and set the s variable
+
         Ok(KVStore {
-            size: 0,
+            size: s,
             path: String::from(path),
         })
     }
@@ -113,7 +120,7 @@ impl Operations for KVStore {
         K: serde::Serialize + Default + Debug,
         V: serde::Serialize + serde::de::DeserializeOwned + Default + Debug 
     {
-        println!("{:?}, {:?}", key, value);
+        println!("inserted {:?}, {:?} to {:?}", key, value, self.path);
         Ok(value)
     }
 
@@ -123,7 +130,7 @@ impl Operations for KVStore {
         V: serde::de::DeserializeOwned + Default + Debug 
     {
         let ret: V = Default::default();
-        println!("{:?}, {:?}", key, ret);
+        println!("loadeed {:?}, {:?} from {:?}", key, ret, self.path);
         Ok(ret)
     }
 
@@ -133,7 +140,7 @@ impl Operations for KVStore {
         V: serde::de::DeserializeOwned + Default + Debug 
     {
         let ret: V = Default::default();
-        println!("{:?}, {:?}", key, ret);
+        println!("removed {:?}, {:?} from {:?}", key, ret, self.path);
         Ok(ret)
     }
 }

@@ -37,7 +37,7 @@ pub trait Operations {
     /// A function that inserts a new key-value mapping.
     ///
     /// If there is **no** key-value mapping stored already with the same key, it should return a
-    /// Result that contains the the value being asked to be inserted.
+    /// Result that contains the value being asked to be inserted.
     ///
     /// If there **is** a key-value mapping stored already with the same key, it should first read
     /// the existing value, overwrite the existing value with the new value, and return a Result
@@ -53,7 +53,7 @@ pub trait Operations {
     fn insert<K, V>(self: &Self, key: K, value: V) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Serialize + Default + Debug;
+        V: serde::Serialize + serde::de::DeserializeOwned + Default + Debug;
 
     /// A function that returns a previously-inserted value.
     ///
@@ -67,10 +67,10 @@ pub trait Operations {
     ///
     /// Refer to [https://docs.serde.rs/serde/](https://docs.serde.rs/serde/)
     /// and [https://serde.rs](https://serde.rs) for serde.
-    fn lookup<'de, K, V>(self: &Self, key: K) -> std::io::Result<V>
+    fn lookup<K, V>(self: &Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Deserialize<'de> + Default + Debug;
+        V: serde::de::DeserializeOwned + Default + Debug;
 
     /// A function that removes a previously-inserted key-value mapping.
     ///
@@ -87,47 +87,50 @@ pub trait Operations {
     ///
     /// Refer to [https://docs.serde.rs/serde/](https://docs.serde.rs/serde/)
     /// and [https://serde.rs](https://serde.rs) for serde.
-    fn remove<'de, K, V>(self: &Self, key: K) -> std::io::Result<V>
+    fn remove<K, V>(self: &Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Deserialize<'de> + Default + Debug;
+        V: serde::de::DeserializeOwned + Default + Debug;
 }
 
 impl Operations for KVStore {
-    fn new(path: &str) -> std::io::Result<KVStore> {
+    fn new(path: &str) -> std::io::Result<Self>
+    where
+        Self: Sized 
+    {
         Ok(KVStore {
             size: 0,
             path: String::from(path),
         })
     }
 
-    fn size(&self) -> usize {
-        0
+    fn size(self: &Self) -> usize {
+        self.size
     }
 
-    fn insert<K, V>(&self, key: K, value: V) -> std::io::Result<V>
+    fn insert<K, V>(self: &Self, key: K, value: V) -> std::io::Result<V>
     where
-        K: serde::Serialize + Debug,
-        V: serde::Serialize + Debug,
+        K: serde::Serialize + Default + Debug,
+        V: serde::Serialize + serde::de::DeserializeOwned + Default + Debug 
     {
         println!("{:?}, {:?}", key, value);
         Ok(value)
     }
 
-    fn lookup<'de, K, V>(&self, key: K) -> std::io::Result<V>
+    fn lookup<K, V>(self: &Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Deserialize<'de> + Default + Debug,
+        V: serde::de::DeserializeOwned + Default + Debug 
     {
         let ret: V = Default::default();
         println!("{:?}, {:?}", key, ret);
         Ok(ret)
     }
 
-    fn remove<'de, K, V>(&self, key: K) -> std::io::Result<V>
+    fn remove<K, V>(self: &Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Deserialize<'de> + Default + Debug,
+        V: serde::de::DeserializeOwned + Default + Debug 
     {
         let ret: V = Default::default();
         println!("{:?}, {:?}", key, ret);

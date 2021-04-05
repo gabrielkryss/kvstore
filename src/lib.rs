@@ -38,12 +38,11 @@ pub trait Operations {
 
     /// A function that inserts a new key-value mapping.
     ///
-    /// If there is **no** key-value mapping stored already with the same key, it should return a
-    /// Result that contains the value being asked to be inserted.
+    /// If there is **no** key-value mapping stored already with the same key, it should return
+    /// `Ok(())` if storing is successfully done.
     ///
-    /// If there **is** a key-value mapping stored already with the same key, it should first read
-    /// the existing value, overwrite the existing value with the new value, and return a Result
-    /// that contains the **existing** value.
+    /// If there **is** a key-value mapping stored already with the same key, it should return an
+    /// [std::io::Error].
     ///
     /// Make sure you read and understand the assignment document regarding how to store key-value
     /// mappings using files as well as how to structure sub-directories.
@@ -52,10 +51,10 @@ pub trait Operations {
     ///
     /// Refer to [https://docs.serde.rs/serde/](https://docs.serde.rs/serde/)
     /// and [https://serde.rs](https://serde.rs) for serde.
-    fn insert<K, V>(self: &Self, key: K, value: V) -> std::io::Result<V>
+    fn insert<K, V>(self: &mut Self, key: K, value: V) -> std::io::Result<()>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Serialize + serde::de::DeserializeOwned + Default + Debug;
+        V: serde::Serialize + Default + Debug;
 
     /// A function that returns a previously-inserted value.
     ///
@@ -89,7 +88,7 @@ pub trait Operations {
     ///
     /// Refer to [https://docs.serde.rs/serde/](https://docs.serde.rs/serde/)
     /// and [https://serde.rs](https://serde.rs) for serde.
-    fn remove<K, V>(self: &Self, key: K) -> std::io::Result<V>
+    fn remove<K, V>(self: &mut Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
         V: serde::de::DeserializeOwned + Default + Debug;

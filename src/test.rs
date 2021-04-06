@@ -1,10 +1,4 @@
 use std::fmt::Debug;
-use std::fs;
-use std::io::{Error, ErrorKind};
-
-use serde::{Serialize, Deserialize};
-use serde_json::{Result, Value};
-use sha2::{Sha256, Digest};
 
 #[derive(Debug)]
 /// A struct that represents a key-value store.
@@ -93,79 +87,4 @@ pub trait Operations {
     where
         K: serde::Serialize + Default + Debug,
         V: serde::de::DeserializeOwned + Default + Debug;
-}
-
-impl Operations for KVStore {
-    fn new(path: &str) -> std::io::Result<Self>
-    where
-        Self: Sized 
-    {
-        fs::create_dir_all(path)?; // maybe use create_dir instead?
-        let mut s: usize = 0;
-        // check if path contains key value mappings (do we count the files? directories?)
-        // if there is, count key value mappings and set the s variable
-
-        Ok(KVStore {
-            size: s,
-            path: String::from(path),
-        })
-    }
-
-    fn size(self: &Self) -> usize {
-        self.size
-    }
-
-    fn insert<K, V>(self: &mut Self, key: K, value: V) -> std::io::Result<()>
-    where
-        K: serde::Serialize + Default + Debug,
-        V: serde::Serialize + Default + Debug 
-    {
-        println!("inserted {:?}, {:?} to {:?}", key, value, self.path);
-        
-        // 1) Serialize key and value using serde (use serde_json)
-        let key_json = serde_json::to_string(&key)?;     // converts to io::Error
-        let value_json = serde_json::to_string(&value)?; // converts to io::Error
-
-        // 2) Generate SHA256 Digest string (hash)
-        let mut hasher = Sha256::new();
-        hasher.update(key_json);
-        let key_hash = hasher.finalize();
-
-        // 3) Generate 2 files (<hash>.key and <hash>.value)
-
-        
-        // 3) Generate error if need be
-        // let alrdy_exst_err = Error::new(ErrorKind::Io, "Key already exists!");
-
-        
-        return Ok(()) // storing successful
-    }
-
-    fn lookup<K, V>(self: &Self, key: K) -> std::io::Result<V>
-    where
-        K: serde::Serialize + Default + Debug,
-        V: serde::de::DeserializeOwned + Default + Debug 
-    {
-        let ret: V = Default::default();
-        println!("loadeed {:?}, {:?} from {:?}", key, ret, self.path);
-        Ok(ret)
-    }
-
-    fn remove<K, V>(self: &mut Self, key: K) -> std::io::Result<V>
-    where
-        K: serde::Serialize + Default + Debug,
-        V: serde::de::DeserializeOwned + Default + Debug 
-    {
-        let ret: V = Default::default();
-        println!("removed {:?}, {:?} from {:?}", key, ret, self.path);
-        Ok(ret)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }

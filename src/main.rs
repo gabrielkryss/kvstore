@@ -2,8 +2,8 @@
 use kvstore::{KVStore, Operations};
 
 fn main() {
-    let kvs = KVStore::new("./database/instance_1").unwrap();
+    let mut kvs = KVStore::new("./database/instance_1").unwrap();
     kvs.insert(String::from("key"), 1 as i32).unwrap();
-    kvs.lookup::<String, i32>(String::from("key")).unwrap();
-    kvs.remove::<String, i32>(String::from("key")).unwrap();
+    // kvs.lookup::<String, i32>(String::from("key")).unwrap();
+    // kvs.remove::<String, i32>(String::from("key")).unwrap();
 }

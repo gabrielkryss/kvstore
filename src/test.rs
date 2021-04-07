@@ -76,7 +76,7 @@ pub trait Operations {
     /// If there is **no** key-value mapping stored already with the same key, it should
     /// return an [std::io::Error].
     ///
-    /// If a sub-directory does not contain any key-value files, this should delete the
+    /// If a sub-directory does not contain any key-value files, this should delete 1\
     /// sub-directory as well.
     ///
     /// Make sure you understand what the trait bounds mean for K and V.

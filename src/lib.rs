@@ -1,6 +1,11 @@
 use std::fmt::Debug;
 use std::fs;
+use std::fs::File;
 use std::io::{Error, ErrorKind};
+use std::io::Write;
+use std::str;
+use std::path::Path;
+use std::path::PathBuf;
 
 use serde::{Serialize, Deserialize};
 use serde_json::{Result, Value};
@@ -128,16 +133,34 @@ impl Operations for KVStore {
 
         // 2) Generate SHA256 Digest string (hash)
         let mut hasher = Sha256::new();
-        hasher.update(key_json);
-        let key_hash = hasher.finalize();
+        hasher.update(&key_json);
+        let key_hash : String = format!("{:x}", hasher.finalize());        
+        
+        //3) check if keys exist (find .key file with same hash, check key)
+        let key_file = key_hash.clone() + ".key";
+        let key_folder = &key_hash.clone()[..10];
+        let key_path = format!("/{}/{}", key_folder, key_file);
+        let key_file_path = format!("{}{}", self.path, key_path);
+        let file_exists =  Path::new(&key_file_path).exists();
 
+        // 4) IF it exists, check if key value in file is same as key        
+        if (file_exists) {
+          let file_key = fs::read_to_string(&key_file_path).expect("Could not read existing key file!");
+          // println!("File Key : {:?}", file_key);
+          // println!("Input Key: {:?}", key_json);
+          assert_eq!(file_key.eq(&key_json), false, "Checking that existing key <{:?}> is not equal to input key <{:?}>", file_key, key_json);
+          fs::write(key_file_path, &key_json).expect("Could not write new key to file!");
+        } else {
         // 3) Generate 2 files (<hash>.key and <hash>.value)
-
-        
-        // 3) Generate error if need be
-        // let alrdy_exst_err = Error::new(ErrorKind::Io, "Key already exists!");
-
-        
+          let value_file = key_hash.clone() + ".value";
+          let value_path = format!("/{}/{}", key_folder, value_file);
+          let value_file_path = format!("{}{}", self.path, value_path);          
+          let mut path_key = Path::new(&key_file_path);
+          let prefix_key = path_key.parent().unwrap();
+          fs::create_dir(prefix_key)?;
+          fs::write(key_file_path, key_json)?;
+          fs::write(value_file_path, value_json)?;
+        }
         return Ok(()) // storing successful
     }
 

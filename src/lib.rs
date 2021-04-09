@@ -179,9 +179,45 @@ impl Operations for KVStore {
         K: serde::Serialize + Default + Debug,
         V: serde::de::DeserializeOwned + Default + Debug 
     {
-        let ret: V = Default::default();
-        println!("removed {:?}, {:?} from {:?}", key, ret, self.path);
-        Ok(ret)
+        
+        let key_json = serde_json::to_string(&key)?;
+
+        // Generate digest string (to search for hash)
+        let mut hasher = Sha256::new();
+        hasher.update(&key_json);
+        let key_hash : String = format!("{:x}", hasher.finalize());
+
+        // Search for folder / file
+        let key_file = key_hash.clone() + ".key";
+        let key_folder = &key_hash.clone()[..10];
+        let key_path = format!("/{}/{}", key_folder, key_file);
+        let key_file_path = format!("{}{}", self.path, key_path);
+        let file_exists =  Path::new(&key_file_path).exists();
+
+        // get value
+        assert_eq!(file_exists, true, "The key : <{:?}> does not exist in KVstore!", key_json);
+
+        let value_file = key_hash.clone() + ".value";
+        let value_path = format!("/{}/{}", key_folder, value_file);
+        let value_file_path = format!("{}{}", self.path, value_path);
+        let value_content = fs::read_to_string(value_file_path.clone()).expect("Could not read existing key file!");
+        // let return_value = V::from(serde_json::from_str(&value_content));
+        // let deserealized = serde_json::from_str(&value_content);
+        let return_value : V = serde_json::from_str(&value_content).unwrap();
+        // Remove key and value file
+        fs::remove_file(key_file_path)?;
+        fs::remove_file(value_file_path)?;
+
+        // Check if folder is empty
+        let folder_path =format!("{}/{}", self.path, key_folder);
+        let folder_empty = fs::read_dir(folder_path.clone())?.next().is_none();
+
+        if (folder_empty) {
+          fs::remove_dir(folder_path)?;
+        }
+
+
+        Ok(return_value)
     }
 }
 

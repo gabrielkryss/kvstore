@@ -1,9 +1,12 @@
 use std::fmt::Debug;
 use std::fs;
+use std::path::Path;
 
 use serde::{Serialize, Deserialize};
 use serde_json::Result;
 use sha2::Sha256;
+
+mod util;
 
 #[derive(Debug)]
 /// A struct that represents a key-value store.
@@ -99,14 +102,15 @@ impl Operations for KVStore {
     where
         Self: Sized 
     {
-        fs::create_dir_all(path)?; // maybe use create_dir instead?
-        let mut s: usize = 0;
-        // check if path contains key value mappings (do we count the files? directories?)
-        // if there is, count key value mappings and set the s variable
+        let _path = Path::new(path);
+        // create directories if provided path does not exist
+        if !_path.exists() { fs::create_dir_all(path)? };
+        // count the number of keys
+        let count: usize = util::count_keys(_path)?;
 
         Ok(KVStore {
-            size: s,
-            path: String::from(path),
+            size: count,
+            path: String::from(path)
         })
     }
 
@@ -114,13 +118,13 @@ impl Operations for KVStore {
         self.size
     }
 
-    fn insert<K, V>(self: &Self, key: K, value: V) -> std::io::Result<V>
+    fn insert<K, V>(self: &mut Self, key: K, value: V) -> std::io::Result<()>
     where
         K: serde::Serialize + Default + Debug,
-        V: serde::Serialize + serde::de::DeserializeOwned + Default + Debug 
+        V: serde::Serialize + Default + Debug
     {
         println!("inserted {:?}, {:?} to {:?}", key, value, self.path);
-        Ok(value)
+        Ok(())
     }
 
     fn lookup<K, V>(self: &Self, key: K) -> std::io::Result<V>
@@ -133,7 +137,7 @@ impl Operations for KVStore {
         Ok(ret)
     }
 
-    fn remove<K, V>(self: &Self, key: K) -> std::io::Result<V>
+    fn remove<K, V>(self: &mut Self, key: K) -> std::io::Result<V>
     where
         K: serde::Serialize + Default + Debug,
         V: serde::de::DeserializeOwned + Default + Debug 

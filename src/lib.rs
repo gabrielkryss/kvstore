@@ -7,6 +7,9 @@ use std::str;
 use std::path::Path;
 use std::path::PathBuf;
 
+// extern crate walkdir;
+use walkdir::WalkDir;
+
 use serde::{Serialize, Deserialize};
 use serde_json::{Result, Value};
 use sha2::{Sha256, Digest};
@@ -169,9 +172,32 @@ impl Operations for KVStore {
         K: serde::Serialize + Default + Debug,
         V: serde::de::DeserializeOwned + Default + Debug 
     {
-        let ret: V = Default::default();
-        println!("loadeed {:?}, {:?} from {:?}", key, ret, self.path);
-        Ok(ret)
+      let key_json = serde_json::to_string(&key)?;
+
+      // Generate digest string (to search for hash)
+      let mut hasher = Sha256::new();
+      hasher.update(&key_json);
+      let key_hash : String = format!("{:x}", hasher.finalize());
+
+      // Search for folder / file
+      let key_file = key_hash.clone() + ".key";
+      let key_folder = &key_hash.clone()[..10];
+      let key_path = format!("/{}/{}", key_folder, key_file);
+      let key_file_path = format!("{}{}", self.path, key_path);
+      let file_exists =  Path::new(&key_file_path).exists();
+
+      // get value
+      assert_eq!(file_exists, true, "The key : <{:?}> does not exist in KVstore!", key_json);
+
+      let value_file = key_hash.clone() + ".value";
+      let value_path = format!("/{}/{}", key_folder, value_file);
+      let value_file_path = format!("{}{}", self.path, value_path);
+      let value_content = fs::read_to_string(value_file_path.clone()).expect("Could not read existing key file!");
+      // let return_value = V::from(serde_json::from_str(&value_content));
+      // let deserealized = serde_json::from_str(&value_content);
+      let return_value : V = serde_json::from_str(&value_content).unwrap();
+
+      Ok(return_value)
     }
 
     fn remove<K, V>(self: &mut Self, key: K) -> std::io::Result<V>
@@ -220,6 +246,9 @@ impl Operations for KVStore {
         Ok(return_value)
     }
 }
+
+
+
 
 #[cfg(test)]
 mod tests {

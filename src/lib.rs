@@ -14,6 +14,8 @@ use serde::{Serialize, Deserialize};
 use serde_json::{Result, Value};
 use sha2::{Sha256, Digest};
 
+mod util;
+
 #[derive(Debug)]
 /// A struct that represents a key-value store.
 pub struct KVStore {
@@ -108,14 +110,15 @@ impl Operations for KVStore {
     where
         Self: Sized 
     {
-        fs::create_dir_all(path)?; // maybe use create_dir instead?
-        let mut s: usize = 0;
-        // check if path contains key value mappings (do we count the files? directories?)
-        // if there is, count key value mappings and set the s variable
+        let _path = Path::new(path);
+        // create directories if provided path does not exist
+        if !_path.exists() { fs::create_dir_all(path)? };
+        // count the number of keys
+        let count: usize = util::count_keys(_path)?;
 
         Ok(KVStore {
-            size: s,
-            path: String::from(path),
+            size: count,
+            path: String::from(path)
         })
     }
 

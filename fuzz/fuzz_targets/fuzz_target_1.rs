@@ -5,8 +5,6 @@ use kvstore::{KVStore, Operations};
 use serde::{Serialize, Deserialize};
 
 fn test_1(data: i32) {
-    // let key = String::from(data.to_string());
-    // let value = vec![data];
     let mut kvs = KVStore::new(".").unwrap();
     kvs.insert(data, data).unwrap();
     kvs.lookup::<i32, i32>(data).unwrap();
@@ -14,8 +12,6 @@ fn test_1(data: i32) {
 }
 
 fn test_2(data: i32) {
-    let key = String::from(data.to_string());
-    let value = vec![data];
     let mut kvs = KVStore::new(".").unwrap();
     kvs.insert(String::from(data.to_string()), vec![data]).unwrap();
     kvs.lookup::<String, Vec<i32> >(String::from(data.to_string())).unwrap();
@@ -29,8 +25,6 @@ fn test_3(data: i32) {
         x: i32
     }
 
-    let key = String::from(data.to_string());
-    let value = Entity{x: data};
     let mut kvs = KVStore::new(".").unwrap();
     kvs.insert(String::from(data.to_string()), Entity{x: data}).unwrap();
     kvs.lookup::<String, Entity >(String::from(data.to_string())).unwrap();
@@ -41,6 +35,4 @@ fuzz_target!(|data: i32| {
     test_1(data);
     test_2(data);
     test_3(data);
-    // println!("{}", data);
-    // let something = format!("{}", &data);
 });

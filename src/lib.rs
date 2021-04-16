@@ -147,15 +147,11 @@ impl Operations for KVStore {
         let key_folder = &key_hash.clone()[..10];
         let key_path = format!("/{}/{}", key_folder, key_file);
         let key_file_path = format!("{}{}", self.path, key_path);
-        let file_exists =  Path::new(&key_file_path).exists();
+        let file_exists =  Path::new(&key_file_path).is_file();
 
         // 4) IF it exists, check if key value in file is same as key        
-        if (file_exists) {
-          let file_key = fs::read_to_string(&key_file_path).expect("Could not read existing key file!");
-          // println!("File Key : {:?}", file_key);
-          // println!("Input Key: {:?}", key_json);
-          assert_eq!(file_key.eq(&key_json), false, "Checking that existing key <{:?}> is not equal to input key <{:?}>", file_key, key_json);
-          fs::write(key_file_path, &key_json).expect("Could not write new key to file!");
+        if file_exists {
+          return Err(std::io::Error::new(std::io::ErrorKind::Other, "Key file already exists!"))
         } else {
         // 3) Generate 2 files (<hash>.key and <hash>.value)
           let value_file = key_hash.clone() + ".value";
@@ -166,7 +162,10 @@ impl Operations for KVStore {
           fs::create_dir(prefix_key)?;
           fs::write(key_file_path, key_json)?;
           fs::write(value_file_path, value_json)?;
-        }
+          // increase size count
+          self.size += 1;
+        }       
+
         return Ok(()) // storing successful
     }
 
@@ -187,10 +186,12 @@ impl Operations for KVStore {
       let key_folder = &key_hash.clone()[..10];
       let key_path = format!("/{}/{}", key_folder, key_file);
       let key_file_path = format!("{}{}", self.path, key_path);
-      let file_exists =  Path::new(&key_file_path).exists();
+      let file_exists =  Path::new(&key_file_path).is_file();
 
-      // get value
-      assert_eq!(file_exists, true, "The key : <{:?}> does not exist in KVstore!", key_json);
+      // Error Handling
+      if !file_exists {
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Key file doesn't exist!"))
+      }
 
       let value_file = key_hash.clone() + ".value";
       let value_path = format!("/{}/{}", key_folder, value_file);
@@ -221,10 +222,12 @@ impl Operations for KVStore {
         let key_folder = &key_hash.clone()[..10];
         let key_path = format!("/{}/{}", key_folder, key_file);
         let key_file_path = format!("{}{}", self.path, key_path);
-        let file_exists =  Path::new(&key_file_path).exists();
+        let file_exists =  Path::new(&key_file_path).is_file();
 
-        // get value
-        assert_eq!(file_exists, true, "The key : <{:?}> does not exist in KVstore!", key_json);
+        // Error Handling
+        if !file_exists {
+          return Err(std::io::Error::new(std::io::ErrorKind::Other, "Key file doesn't exist!"))
+        }
 
         let value_file = key_hash.clone() + ".value";
         let value_path = format!("/{}/{}", key_folder, value_file);
@@ -236,27 +239,18 @@ impl Operations for KVStore {
         // Remove key and value file
         fs::remove_file(key_file_path)?;
         fs::remove_file(value_file_path)?;
+        // Reduce kvstore size
+        self.size -= 1;
 
         // Check if folder is empty
         let folder_path =format!("{}/{}", self.path, key_folder);
         let folder_empty = fs::read_dir(folder_path.clone())?.next().is_none();
 
-        if (folder_empty) {
+        if folder_empty {
           fs::remove_dir(folder_path)?;
         }
-
 
         Ok(return_value)
     }
 }
 
-
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
